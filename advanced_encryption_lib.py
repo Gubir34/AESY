@@ -1,6 +1,7 @@
 import os
 from Crypto.Cipher import AES, Blowfish
 from hashlib import sha256
+import base64
 
 class Encryptor:
     def __init__(self, password: str):
@@ -53,7 +54,18 @@ class Encryptor:
                 result.append(char)
         return ''.join(result)
 
-def encrypt(message: str, password: str) -> str:
+    def save_to_file(self, filename: str, message: str, password: str):
+        with open(filename, 'w') as file:
+            file.write(f"Message: {message}\nPassword: {password}\n")
+
+    def read_from_file(self, filename: str) -> tuple:
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+            message = lines[0].strip().split(": ")[1]
+            password = lines[1].strip().split(": ")[1]
+        return message, password
+
+def aesy_encrypt(password: str, message: str, filename: str = "message.aesy"):
     enc = Encryptor(password)
 
     # 1. AES encryption
@@ -72,20 +84,26 @@ def encrypt(message: str, password: str) -> str:
     # 5. Replace numbers with #
     encrypted_message = enc.replace_numbers(encrypted_message)
 
-    return encrypted_message
+    # Kaydet
+    enc.save_to_file(filename, encrypted_message, password)
 
-def decrypt(ciphertext: str, password: str) -> str:
-    enc = Encryptor(password)
+    print(f"Şifreli Metin Kaydedildi: {filename}")
 
-    # Reverse the process in reverse order
+def aesy_decrypt(filename: str) -> str:
+    enc = Encryptor(password=None)  # Parola dosyadan alınacak
 
-    # 1. Reverse number replacement (this step is tricky as '#' doesn't directly map back to a number.
-    #    We'll assume the original numbers were single digits for simplicity of reversal.
-    #    A more robust solution would require keeping track of the original numbers.)
+    # Dosyadan mesaj ve parola oku
+    saved_message, saved_password = enc.read_from_file(filename)
+    
+    # Şifreyi çözmek için dosyadaki parola kullanılarak işlemler yapılacak
+    enc = Encryptor(saved_password)
+
+    # Reverse number replacement (this step is tricky as '#' doesn't directly map back to a number.
+    #    We'll assume the original numbers were single digits for simplicity of reversal.)
     #    For now, we'll skip the exact reversal of this step.
 
     # 2. Reverse lowercasing
-    ciphertext_upper = ciphertext.upper()
+    ciphertext_upper = saved_message.upper()
 
     # 3. Reverse Caesar cipher
     decrypted_caesar = enc.caesar_cipher(ciphertext_upper, -5)
@@ -104,15 +122,3 @@ def decrypt(ciphertext: str, password: str) -> str:
     except ValueError as e:
         print(f"AES decryption error: {e}")
         return "Decryption error"
-
-if __name__ == "__main__":
-    gizli_mesaj = "Gizli 123 Mesaj!"
-    parola = "benim_guclu_parolam"
-
-    # Şifrele
-    sifreli_metin = encrypt(gizli_mesaj, parola)
-    print(f"Şifreli Metin: {sifreli_metin}")
-
-    # Şifreyi çöz
-    cozulmus_mesaj = decrypt(sifreli_metin, parola)
-    print(f"Çözülmüş Metin: {cozulmus_mesaj}")
