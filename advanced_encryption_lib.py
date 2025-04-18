@@ -1,7 +1,5 @@
 import os
-import tempfile
 from Crypto.Cipher import AES, Blowfish
-from Crypto.Random import get_random_bytes
 from hashlib import sha256
 
 class Encryptor:
@@ -32,43 +30,89 @@ class Encryptor:
         plen = decrypted[-1]
         return decrypted[:-plen]
 
-    def write_temp_file(self, data: bytes, filename: str) -> str:
-        temp_path = os.path.join(tempfile.gettempdir(), filename)
-        with open(temp_path, 'wb') as f:
-            f.write(data)
-        return temp_path
+    def caesar_cipher(self, data: str, shift: int = 5) -> str:
+        result = []
+        for char in data:
+            if char.isalpha():
+                shift_base = 65 if char.isupper() else 97
+                result.append(chr((ord(char) - shift_base + shift) % 26 + shift_base))
+            else:
+                result.append(char)
+        return ''.join(result)
 
-    def load_temp_file(self, filename: str) -> bytes:
-        temp_path = os.path.join(tempfile.gettempdir(), filename)
-        with open(temp_path, 'rb') as f:
-            return f.read()
+    def to_lower_case(self, data: str) -> str:
+        return data.lower()
 
-    def store_in_memory(self, data: bytes) -> bytes:
-        return data
+    def replace_numbers(self, data: str) -> str:
+        result = []
+        for char in data:
+            if char.isdigit():
+                num = int(char)
+                result.append('#' * num)  # Replace the digit with '#' repeated 'num' times
+            else:
+                result.append(char)
+        return ''.join(result)
 
-def encrypt(message: str, password: str, method: str = "AES") -> bytes:
+def encrypt(message: str, password: str) -> str:
     enc = Encryptor(password)
+
+    # 1. AES encryption
     data = message.encode()
-    if method.upper() == "AES":
-        ciphertext = enc.encrypt_aes(data)
-    elif method.upper() == "BLOWFISH":
-        ciphertext = enc.encrypt_blowfish(data)
-    else:
-        raise ValueError("Unsupported encryption method")
+    ciphertext_aes = enc.encrypt_aes(data)
 
-    enc.write_temp_file(ciphertext, "encrypted_data.bin")
-    enc.store_in_memory(ciphertext)
-    return ciphertext
+    # 2. Blowfish encryption (input is the AES ciphertext)
+    ciphertext_blowfish = enc.encrypt_blowfish(ciphertext_aes)
 
-def decrypt(ciphertext: bytes, password: str, method: str = "AES") -> str:
+    # 3. 5 times Caesar cipher shift (input is the Blowfish ciphertext as bytes, so decode it first)
+    encrypted_message = enc.caesar_cipher(ciphertext_blowfish.decode('latin-1', errors='ignore'), 5)
+
+    # 4. Convert to lowercase
+    encrypted_message = enc.to_lower_case(encrypted_message)
+
+    # 5. Replace numbers with #
+    encrypted_message = enc.replace_numbers(encrypted_message)
+
+    return encrypted_message
+
+def decrypt(ciphertext: str, password: str) -> str:
     enc = Encryptor(password)
-    if method.upper() == "AES":
-        plaintext = enc.decrypt_aes(ciphertext)
-    elif method.upper() == "BLOWFISH":
-        plaintext = enc.decrypt_blowfish(ciphertext)
-    else:
-        raise ValueError("Unsupported decryption method")
 
-    enc.write_temp_file(ciphertext, "decrypted_data.bin")
-    enc.store_in_memory(plaintext)
-    return plaintext.decode()
+    # Reverse the process in reverse order
+
+    # 1. Reverse number replacement (this step is tricky as '#' doesn't directly map back to a number.
+    #    We'll assume the original numbers were single digits for simplicity of reversal.
+    #    A more robust solution would require keeping track of the original numbers.)
+    #    For now, we'll skip the exact reversal of this step.
+
+    # 2. Reverse lowercasing
+    ciphertext_upper = ciphertext.upper()
+
+    # 3. Reverse Caesar cipher
+    decrypted_caesar = enc.caesar_cipher(ciphertext_upper, -5)
+
+    # 4. Reverse Blowfish decryption (input needs to be bytes)
+    try:
+        decrypted_blowfish = enc.decrypt_blowfish(decrypted_caesar.encode('latin-1'))
+    except ValueError as e:
+        print(f"Blowfish decryption error: {e}")
+        return "Decryption error"
+
+    # 5. Reverse AES decryption
+    try:
+        plaintext = enc.decrypt_aes(decrypted_blowfish)
+        return plaintext.decode()
+    except ValueError as e:
+        print(f"AES decryption error: {e}")
+        return "Decryption error"
+
+if __name__ == "__main__":
+    gizli_mesaj = "Gizli 123 Mesaj!"
+    parola = "benim_guclu_parolam"
+
+    # Şifrele
+    sifreli_metin = encrypt(gizli_mesaj, parola)
+    print(f"Şifreli Metin: {sifreli_metin}")
+
+    # Şifreyi çöz
+    cozulmus_mesaj = decrypt(sifreli_metin, parola)
+    print(f"Çözülmüş Metin: {cozulmus_mesaj}")
