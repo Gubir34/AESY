@@ -23,3 +23,14 @@ To install the required dependencies, use:
 
 ```bash
 pip install pycryptodome
+
+### Usage
+
+import advanced_encryption_lib
+
+password = "my_strong_password"
+message = "Secret 123 Message!"
+
+# Encrypt the message
+advanced_encryption_lib.aesy_encrypt(password, message)
+
