@@ -14,23 +14,18 @@ Unlike a hash, this encryption is **reversible** — with the correct password a
 
 ## 🔧 Features
 
-- 🔐 Supports **AES (256-bit)** and **Blowfish** encryption
 - 🔁 Fully reversible (encrypt → decrypt)
-- 🧂 Random salt generation for added security
-- 🔑 Password-based encryption (PBE)
-- 📄 Optional file encryption support
-- 💻 CLI interface for terminal use
-- 🧪 Easy Python API for integration
+- 💻 GUI
+- 🧪 Python library integration
 
 ---
 
 ## 🧠 How It Works
 
-1. You provide a message and a password.
-2. The system uses your chosen method (AES or Blowfish) to encrypt the message.
-3. A random salt (optional) and key derivation are applied to secure the password.
-4. You get a base64-encoded encrypted string.
-5. To decrypt, the same password and method must be used.
+1. You provide a message and how many times that you want to the message to be encrypt(on low-end pcs max 5 or 7 or app will crash).
+2. The system uses AES, Blowfish and Characther Shifting to encrypt the message.
+4. You get a encrypted string.
+5. To decrypt, the same password and generation number must be used.
 
 ---
 
