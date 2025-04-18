@@ -1,45 +1,25 @@
-# 🔐 Advanced Encryption System
+# Advanced Encryption System
 
-> ⚠️ **Not AES (Advanced Encryption Standard)** in name — but yes, it uses **AES** and **Blowfish** under the hood!
+This project provides an encryption system that allows users to encrypt and decrypt messages using AES and Blowfish encryption algorithms, along with additional transformations like Caesar cipher and character replacements.
 
----
+The system also supports saving and reading encrypted messages to and from `.aesy` files, where both the encrypted message and the password are securely stored.
 
-## 📚 About
+## Features
 
-**Advanced-Encryption-System** is a custom encryption framework that uses real cryptographic algorithms like **AES** and **Blowfish** to securely encrypt and decrypt messages.
+- AES and Blowfish encryption
+- Caesar cipher (for additional obfuscation)
+- Character transformation (converts numbers into `#` symbols)
+- Saves encrypted messages and passwords in `.aesy` files
+- Supports both encryption and decryption using simple function calls
 
-Unlike a hash, this encryption is **reversible** — with the correct password and settings, you can get back the original message. It’s designed for learning, experimenting, and implementing strong encryption in your own projects.
+## Requirements
 
----
+- Python 3.x
+- `pycryptodome` (for AES and Blowfish encryption)
 
-## 🔧 Features
+### Installation
 
-- 🔁 Fully reversible (encrypt → decrypt)
-- 💻 GUI
-- 🧪 Python library integration
+To install the required dependencies, use:
 
----
-
-## 🧠 How It Works
-
-1. You provide a message and how many times that you want to the message to be encrypt(on low-end pcs max 5 or 7 or app will crash).
-2. The system uses AES, Blowfish and Characther Shifting to encrypt the message.
-4. You get a encrypted string.
-5. To decrypt, the same password and generation number must be used.
-
----
-
-## 🧪 Example Usage
-
-### Python (Simple Demo)
-
-```python
-from advanced_encryption import encrypt, decrypt
-
-# Encrypt the message
-ciphertext = encrypt("This is a secret message", password="MyStrongPassword!", method="AES")
-print("Encrypted:", ciphertext)
-
-# Decrypt the message
-plaintext = decrypt(ciphertext, password="MyStrongPassword!", method="AES")
-print("Decrypted:", plaintext)
+```bash
+pip install pycryptodome
