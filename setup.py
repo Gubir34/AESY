@@ -8,7 +8,7 @@ setup(
         'pycryptodome',
     ],
     author='Can TEOMAN',  # Yazar bilgisi
-    author_email='canteoman15@gmail.com.com',  # Yazar e-posta adresi
+    author_email='canteoman15@gmail.com',  # Yazar e-posta adresi
     description='A simple advanced encryption library for encrypting/decrypting data',
     long_description=open('README.md').read(),  # README dosyasının içeriği
     long_description_content_type='text/markdown',
@@ -17,5 +17,7 @@ setup(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',  # Lisans bilgisi
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3 :: Only',
+        'Intended Audience :: Developers',
     ],
 )
