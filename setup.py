@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='Advanced-Encryption-System',  # Kütüphanenizin adı
+    name='advanced_encryption_system',  # Kütüphanenizin adı
     version='1.0.0',  # Kütüphanenizin versiyonu
     packages=find_packages(),  # Kütüphanenin bulunduğu paketleri otomatik olarak bulur
     install_requires=[  # Kütüphanenin bağımlılıkları (örneğin, Crypto, pycryptodome vb.)
