@@ -1,4 +1,4 @@
-name: Publish Python 🐍 AESY package to PyPI
+name: Publish Python 🐍 distribution 📦 to PyPI
 
 on:
   release:
@@ -9,27 +9,25 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  publish-to-pypi:
     environment: pypi
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
 
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade build
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
 
-      - name: Build package
-        run: |
-          python -m build
+    - name: Build package
+      run: python -m build
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          skip-existing: true
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
