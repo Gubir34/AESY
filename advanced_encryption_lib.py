@@ -1,11 +1,16 @@
 import os
 from Crypto.Cipher import AES, Blowfish
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import Twofish
+from Crypto.Random import get_random_bytes
 from hashlib import sha256
-import base64
 
 class Encryptor:
     def __init__(self, password: str):
         self.key = sha256(password.encode()).digest()
+        self.rsa_key = RSA.generate(2048)
+        self.rsa_cipher = PKCS1_OAEP.new(self.rsa_key)
 
     def encrypt_aes(self, data: bytes) -> bytes:
         cipher = AES.new(self.key, AES.MODE_EAX)
@@ -31,6 +36,24 @@ class Encryptor:
         plen = decrypted[-1]
         return decrypted[:-plen]
 
+    def encrypt_twofish(self, data: bytes) -> bytes:
+        cipher = Twofish.new(self.key)
+        plen = 16 - len(data) % 16
+        padding = bytes([plen]) * plen
+        return cipher.encrypt(data + padding)
+
+    def decrypt_twofish(self, data: bytes) -> bytes:
+        cipher = Twofish.new(self.key)
+        decrypted = cipher.decrypt(data)
+        plen = decrypted[-1]
+        return decrypted[:-plen]
+
+    def encrypt_rsa(self, data: bytes) -> bytes:
+        return self.rsa_cipher.encrypt(data)
+
+    def decrypt_rsa(self, data: bytes) -> bytes:
+        return self.rsa_cipher.decrypt(data)
+
     def caesar_cipher(self, data: str, shift: int = 5) -> str:
         result = []
         for char in data:
@@ -45,80 +68,62 @@ class Encryptor:
         return data.lower()
 
     def replace_numbers(self, data: str) -> str:
+        symbols = ['#', '$', '%', '&']
         result = []
         for char in data:
             if char.isdigit():
                 num = int(char)
-                result.append('#' * num)  # Replace the digit with '#' repeated 'num' times
+                symbol = symbols[num % len(symbols)]
+                result.append(symbol * num)
             else:
                 result.append(char)
         return ''.join(result)
 
-    def save_to_file(self, filename: str, message: str, password: str):
-        with open(filename, 'w') as file:
-            file.write(f"Message: {message}\nPassword: {password}\n")
+def encrypt(message: str, password: str) -> str:
+    enc = Encryptor(password)
+    data = message.encode()
+    
+    # Layered encryption
+    aes_encrypted = enc.encrypt_aes(data)
+    rsa_encrypted = enc.encrypt_rsa(aes_encrypted)
+    blowfish_encrypted = enc.encrypt_blowfish(rsa_encrypted)
+    twofish_encrypted = enc.encrypt_twofish(blowfish_encrypted)
 
-    def read_from_file(self, filename: str) -> tuple:
-        with open(filename, 'r') as file:
-            lines = file.readlines()
-            message = lines[0].strip().split(": ")[1]
-            password = lines[1].strip().split(": ")[1]
-        return message, password
+    # Caesar Cipher
+    shifted = enc.caesar_cipher(twofish_encrypted.decode('latin-1', errors='ignore'), 5)
 
-def aesy_encrypt(password: str, message: str, filename: str = "message.aesy"):
+    # Lowercase
+    lowered = enc.to_lower_case(shifted)
+
+    # Replace numbers
+    final = enc.replace_numbers(lowered)
+
+    with open("message.aesy", "w", encoding="utf-8") as f:
+        f.write(password + "\n" + final)
+
+    return final
+
+def decrypt(filepath: str) -> str:
+    with open(filepath, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    password = lines[0].strip()
+    ciphertext = ''.join(lines[1:])
+
     enc = Encryptor(password)
 
-    # 1. AES encryption
-    data = message.encode()
-    ciphertext_aes = enc.encrypt_aes(data)
+    # Reverse order
+    ciphertext = enc.caesar_cipher(ciphertext.upper(), -5)
+    ciphertext_bytes = ciphertext.encode('latin-1')
 
-    # 2. Blowfish encryption (input is the AES ciphertext)
-    ciphertext_blowfish = enc.encrypt_blowfish(ciphertext_aes)
+    decrypted_twofish = enc.decrypt_twofish(ciphertext_bytes)
+    decrypted_blowfish = enc.decrypt_blowfish(decrypted_twofish)
+    decrypted_rsa = enc.decrypt_rsa(decrypted_blowfish)
+    decrypted_aes = enc.decrypt_aes(decrypted_rsa)
 
-    # 3. 5 times Caesar cipher shift (input is the Blowfish ciphertext as bytes, so decode it first)
-    encrypted_message = enc.caesar_cipher(ciphertext_blowfish.decode('latin-1', errors='ignore'), 5)
+    return decrypted_aes.decode()
 
-    # 4. Convert to lowercase
-    encrypted_message = enc.to_lower_case(encrypted_message)
+def aesy_encrypt(password: str, text: str) -> str:
+    return encrypt(text, password)
 
-    # 5. Replace numbers with #
-    encrypted_message = enc.replace_numbers(encrypted_message)
-
-    # Kaydet
-    enc.save_to_file(filename, encrypted_message, password)
-
-    print(f"Şifreli Metin Kaydedildi: {filename}")
-
-def aesy_decrypt(filename: str) -> str:
-    enc = Encryptor(password=None)  # Parola dosyadan alınacak
-
-    # Dosyadan mesaj ve parola oku
-    saved_message, saved_password = enc.read_from_file(filename)
-    
-    # Şifreyi çözmek için dosyadaki parola kullanılarak işlemler yapılacak
-    enc = Encryptor(saved_password)
-
-    # Reverse number replacement (this step is tricky as '#' doesn't directly map back to a number.
-    #    We'll assume the original numbers were single digits for simplicity of reversal.)
-    #    For now, we'll skip the exact reversal of this step.
-
-    # 2. Reverse lowercasing
-    ciphertext_upper = saved_message.upper()
-
-    # 3. Reverse Caesar cipher
-    decrypted_caesar = enc.caesar_cipher(ciphertext_upper, -5)
-
-    # 4. Reverse Blowfish decryption (input needs to be bytes)
-    try:
-        decrypted_blowfish = enc.decrypt_blowfish(decrypted_caesar.encode('latin-1'))
-    except ValueError as e:
-        print(f"Blowfish decryption error: {e}")
-        return "Decryption error"
-
-    # 5. Reverse AES decryption
-    try:
-        plaintext = enc.decrypt_aes(decrypted_blowfish)
-        return plaintext.decode()
-    except ValueError as e:
-        print(f"AES decryption error: {e}")
-        return "Decryption error"
+def aesy_decrypt(filepath: str) -> str:
+    return decrypt(filepath)
