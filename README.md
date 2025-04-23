@@ -13,16 +13,20 @@ The system also supports saving and reading encrypted messages to and from `.aes
 - Supports both encryption and decryption using simple function calls
 
 
-### Usage
+### Example usage:
 
-import advanced_encryption_lib
-
-password = "my_strong_password"
-message = "Secret 123 Message!"
+# Create AESY encryption object with predefined password (no input allowed)
+aes = AESY()
 
 # Encrypt the message
-advanced_encryption_lib.aesy_encrypt(password, message)
+encrypted_message = aes.encrypt("Secret 123 Message!")
 
+# Print the encrypted message with seed
+print(f"Encrypted message with seed: {encrypted_message}")
+
+# Decrypt the message
+decrypted_message = aes.decrypt(encrypted_message)
+print(f"Decrypted message: {decrypted_message}")
 
 
 
