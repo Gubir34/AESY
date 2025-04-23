@@ -1,12 +1,14 @@
-import advanced_encryption_lib
+# Example usage:
 
-# Get password and message from user
-password = "my_strong_password"
-message = "Secret 123 Message!"
+# Create AESY encryption object with predefined password (no input allowed)
+aes = AESY()
 
-# Encryption
-advanced_encryption_lib.aesy_encrypt(password, message)
+# Encrypt the message
+encrypted_message = aes.encrypt("Secret 123 Message!")
 
-# Decryption
-decrypted_message = advanced_encryption_lib.aesy_decrypt('message.aesy')
-print(f"Unencrypted message: {decrypted_message}")
+# Print the encrypted message with seed
+print(f"Encrypted message with seed: {encrypted_message}")
+
+# Decrypt the message
+decrypted_message = aes.decrypt(encrypted_message)
+print(f"Decrypted message: {decrypted_message}")
