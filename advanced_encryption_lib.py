@@ -1,4 +1,5 @@
-import os
+import random
+import string
 from Crypto.Cipher import AES, Blowfish
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
@@ -6,9 +7,13 @@ from Crypto.Cipher import Twofish
 from Crypto.Random import get_random_bytes
 from hashlib import sha256
 
-class Encryptor:
-    def __init__(self, password: str):
-        self.key = sha256(password.encode()).digest()
+class AESY:
+    def __init__(self):
+        # Sabit şifreyi burada tanımlıyoruz
+        self.password = "eutybsiniriosetbytiornioebtyerteurcbieurtytieyersioesnutseiersnbuotriesvyortotvvvvvvvvvvvvvvvvvvvvvvvvvvvvvrsdknrkyxvrtkxtzvybbbbbbbbbzryjtzjykrbvzrtyrbytzbgvrbryuzyncucnunutvnudt"
+        
+        # Şifreyi SHA256 ile hash'liyoruz ve AES için anahtar olarak kullanıyoruz
+        self.key = sha256(self.password.encode()).digest()
         self.rsa_key = RSA.generate(2048)
         self.rsa_cipher = PKCS1_OAEP.new(self.rsa_key)
 
@@ -54,7 +59,7 @@ class Encryptor:
     def decrypt_rsa(self, data: bytes) -> bytes:
         return self.rsa_cipher.decrypt(data)
 
-    def caesar_cipher(self, data: str, shift: int = 5) -> str:
+    def caesar_cipher(self, data: str, shift: int = 7) -> str:
         result = []
         for char in data:
             if char.isalpha():
@@ -79,51 +84,60 @@ class Encryptor:
                 result.append(char)
         return ''.join(result)
 
-def encrypt(message: str, password: str) -> str:
-    enc = Encryptor(password)
-    data = message.encode()
-    
-    # Layered encryption
-    aes_encrypted = enc.encrypt_aes(data)
-    rsa_encrypted = enc.encrypt_rsa(aes_encrypted)
-    blowfish_encrypted = enc.encrypt_blowfish(rsa_encrypted)
-    twofish_encrypted = enc.encrypt_twofish(blowfish_encrypted)
+    def generate_seed(self, seed_length: int) -> str:
+        # Generate a random seed of the requested length
+        seed = ''.join(random.choices(string.ascii_letters + string.digits, k=seed_length))
+        return seed
 
-    # Caesar Cipher
-    shifted = enc.caesar_cipher(twofish_encrypted.decode('latin-1', errors='ignore'), 5)
+    def encrypt(self, message: str, seed_length: int = 128) -> str:
+        # Encrypt the message with AESY encryption algorithm
 
-    # Lowercase
-    lowered = enc.to_lower_case(shifted)
+        # Ensure seed_length is provided, otherwise set it to 128 by default
+        if not seed_length:
+            seed_length = 128
 
-    # Replace numbers
-    final = enc.replace_numbers(lowered)
+        # Convert message to bytes
+        data = message.encode()
 
-    with open("message.aesy", "w", encoding="utf-8") as f:
-        f.write(password + "\n" + final)
+        # Apply AES, RSA, Blowfish, Twofish encryption
+        aes_encrypted = self.encrypt_aes(data)
+        rsa_encrypted = self.encrypt_rsa(aes_encrypted)
+        blowfish_encrypted = self.encrypt_blowfish(rsa_encrypted)
+        twofish_encrypted = self.encrypt_twofish(blowfish_encrypted)
 
-    return final
+        # Apply Caesar Cipher
+        shifted = self.caesar_cipher(twofish_encrypted.decode('latin-1', errors='ignore'))
 
-def decrypt(filepath: str) -> str:
-    with open(filepath, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    password = lines[0].strip()
-    ciphertext = ''.join(lines[1:])
+        # Convert the text to lowercase
+        lowered = self.to_lower_case(shifted)
 
-    enc = Encryptor(password)
+        # Replace numbers with symbols
+        final = self.replace_numbers(lowered)
 
-    # Reverse order
-    ciphertext = enc.caesar_cipher(ciphertext.upper(), -5)
-    ciphertext_bytes = ciphertext.encode('latin-1')
+        # Generate the seed and append it to the encrypted message
+        seed = self.generate_seed(seed_length)
 
-    decrypted_twofish = enc.decrypt_twofish(ciphertext_bytes)
-    decrypted_blowfish = enc.decrypt_blowfish(decrypted_twofish)
-    decrypted_rsa = enc.decrypt_rsa(decrypted_blowfish)
-    decrypted_aes = enc.decrypt_aes(decrypted_rsa)
+        # Return the final encrypted message with seed
+        return final + "%&&%" + seed
 
-    return decrypted_aes.decode()
+    def decrypt(self, encrypted_message: str) -> str:
+        # Decrypt the message with AESY decryption algorithm
 
-def aesy_encrypt(password: str, text: str) -> str:
-    return encrypt(text, password)
+        # Separate the encrypted message and seed
+        encrypted_data, seed = encrypted_message.split("%&&%")
 
-def aesy_decrypt(filepath: str) -> str:
-    return decrypt(filepath)
+        # Reverse the transformations
+        replaced = self.replace_numbers(encrypted_data)
+        original_case = self.to_lower_case(replaced)
+        reverted = self.caesar_cipher(original_case.upper(), -7)
+
+        # Convert back to bytes
+        ciphertext_bytes = reverted.encode('latin-1')
+
+        # Apply layered decryption: Twofish, Blowfish, RSA, AES
+        decrypted_twofish = self.decrypt_twofish(ciphertext_bytes)
+        decrypted_blowfish = self.decrypt_blowfish(decrypted_twofish)
+        decrypted_rsa = self.decrypt_rsa(decrypted_blowfish)
+        decrypted_aes = self.decrypt_aes(decrypted_rsa)
+
+        return decrypted_aes.decode()
